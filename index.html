@@ -11,6 +11,7 @@
       background-color: #111;
       color: #eee;
       text-align: center;
+      overflow-x: hidden;
     }
 
     header {
@@ -18,6 +19,8 @@
       background: url('https://res.cloudinary.com/itb-database/image/upload/s--ir8ojemk--/c_fill,dpr_auto,f_auto,q_auto:eco,w_1280/v1/Municipalities/zpscvptdnrnnvzs3pxe6') no-repeat center center;
       background-size: cover;
       box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+      position: relative;
+      z-index: 1;
     }
 
     header h1 {
@@ -45,6 +48,8 @@
       border-radius: 10px;
       margin-top: 1rem;
       box-shadow: 0 0 10px #ff6600, 0 0 20px #ff6600;
+      position: relative;
+      z-index: 1;
     }
 
     .blink-button {
@@ -60,6 +65,8 @@
       animation: blink 1.5s infinite;
       cursor: pointer;
       text-decoration: none;
+      position: relative;
+      z-index: 1;
     }
 
     @keyframes blink {
@@ -78,6 +85,8 @@
       overflow: hidden;
       border-radius: 12px;
       box-shadow: 0 0 20px rgba(255, 102, 0, 0.6);
+      position: relative;
+      z-index: 1;
     }
 
     .video-container iframe {
@@ -94,8 +103,10 @@
       padding: 1rem;
       background: #1c1c1c;
       border-radius: 12px;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       line-height: 1.6;
+      position: relative;
+      z-index: 1;
     }
 
     h2 {
@@ -120,10 +131,22 @@
       font-size: 1rem;
       color: #888;
       background: #000;
+      position: relative;
+      z-index: 1;
     }
 
     a {
       color: #ff8c33;
+    }
+
+    /* Fireworks canvas styling */
+    #fireworks-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* so clicks go through */
+      z-index: 10; /* above all content */
     }
   </style>
 </head>
@@ -211,6 +234,185 @@
   <footer>
     © 2025 Hellingur Hátíð – Aðeins á Íslandi
   </footer>
+
+  <!-- Fireworks canvas -->
+  <canvas id="fireworks-canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('fireworks-canvas');
+    const ctx = canvas.getContext('2d');
+    let cw, ch;
+    let fireworks = [];
+    let particles = [];
+    let hue = 120;
+    let limiterTotal = 2;    // fires more often (lower number = more frequent)
+    let limiterTick = 0;
+    let timerTotal = 40;     // shorter delay between fireworks
+    let timerTick = 0;
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function calculateDistance(x1, y1, x2, y2) {
+      const xDistance = x1 - x2;
+      const yDistance = y1 - y2;
+      return Math.sqrt(xDistance * xDistance + yDistance * yDistance);
+    }
+
+    class Firework {
+      constructor(sx, sy, tx, ty) {
+        this.x = sx;
+        this.y = sy;
+        this.sx = sx;
+        this.sy = sy;
+        this.tx = tx;
+        this.ty = ty;
+        this.distanceToTarget = calculateDistance(sx, sy, tx, ty);
+        this.distanceTraveled = 0;
+        this.coordinates = [];
+        this.coordinateCount = 3;
+        while (this.coordinateCount--) {
+          this.coordinates.push([this.x, this.y]);
+        }
+        this.angle = Math.atan2(ty - sy, tx - sx);
+        this.speed = 3;          // faster speed for more dynamic feel
+        this.acceleration = 1.07;
+        this.brightness = random(50, 70);
+        this.targetRadius = 1;
+      }
+      update(index) {
+        this.coordinates.pop();
+        this.coordinates.unshift([this.x, this.y]);
+
+        if (this.targetRadius < 8) {
+          this.targetRadius += 0.3;
+        } else {
+          this.targetRadius = 1;
+        }
+
+        this.speed *= this.acceleration;
+
+        const vx = Math.cos(this.angle) * this.speed;
+        const vy = Math.sin(this.angle) * this.speed;
+        this.distanceTraveled = calculateDistance(this.sx, this.sy, this.x + vx, this.y + vy);
+
+        if (this.distanceTraveled >= this.distanceToTarget) {
+          createParticles(this.tx, this.ty);
+          fireworks.splice(index, 1);
+        } else {
+          this.x += vx;
+          this.y += vy;
+        }
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+        ctx.lineTo(this.x, this.y);
+        ctx.strokeStyle = 'hsl(' + hue + ', 100%, ' + this.brightness + '%)';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(this.tx, this.ty, this.targetRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.coordinates = [];
+        this.coordinateCount = 5;
+        while (this.coordinateCount--) {
+          this.coordinates.push([this.x, this.y]);
+        }
+        this.angle = random(0, Math.PI * 2);
+        this.speed = random(2, 15); // more spread and faster particles
+        this.friction = 0.92;
+        this.gravity = 1;
+        this.hue = random(hue - 50, hue + 50);
+        this.brightness = random(50, 80);
+        this.alpha = 1;
+        this.decay = random(0.015, 0.04);  // particles last a bit longer
+      }
+      update(index) {
+        this.coordinates.pop();
+        this.coordinates.unshift([this.x, this.y]);
+        this.speed *= this.friction;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
+        this.alpha -= this.decay;
+
+        if (this.alpha <= 0) {
+          particles.splice(index, 1);
+        }
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+        ctx.lineTo(this.x, this.y);
+        ctx.strokeStyle = 'hsla(' + this.hue + ', 100%, ' + this.brightness + '%, ' + this.alpha + ')';
+        ctx.stroke();
+      }
+    }
+
+    function createParticles(x, y) {
+      let particleCount = 50;  // more particles per explosion
+      while (particleCount--) {
+        particles.push(new Particle(x, y));
+      }
+    }
+
+    function loop() {
+      requestAnimationFrame(loop);
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.globalCompositeOperation = 'lighter';
+
+      let i = fireworks.length;
+      while (i--) {
+        fireworks[i].draw();
+        fireworks[i].update(i);
+      }
+
+      let j = particles.length;
+      while (j--) {
+        particles[j].draw();
+        particles[j].update(j);
+      }
+
+      if (timerTick >= timerTotal) {
+        if (limiterTick >= limiterTotal) {
+          const startX = cw / 2;
+          const startY = ch;
+          const targetX = random(0, cw);
+          const targetY = random(0, ch / 2);
+          fireworks.push(new Firework(startX, startY, targetX, targetY));
+          limiterTick = 0;
+        } else {
+          limiterTick++;
+        }
+        timerTick = 0;
+      } else {
+        timerTick++;
+      }
+    }
+
+    function resize() {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    }
+
+    window.onload = () => {
+      resize();
+      loop();
+      window.addEventListener('resize', resize);
+    };
+  </script>
 
 </body>
 </html>
