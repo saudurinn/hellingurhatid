@@ -67,12 +67,25 @@
       50% { opacity: 0; }
     }
 
-    video {
+    /* YouTube container */
+    .video-container {
+      position: relative;
       width: 100%;
-      max-height: 500px;
-      object-fit: cover;
-      display: block;
-      margin: 0;
+      max-width: 800px;
+      margin: 0 auto;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      height: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 102, 0, 0.6);
+    }
+
+    .video-container iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
     }
 
     main {
@@ -119,19 +132,23 @@
   <header>
     <h1>HELLINGUR HÁTÍÐ Á HELLU</h1>
     <p>18. - 20. júlí 2025</p>
-    <a href="https://tix.is/hellingur" class="blink-button" target="_blank">kaupa miða</a>
+    <a href="https://tix.is/hellingur" class="blink-button" target="_blank" rel="noopener noreferrer">kaupa miða</a>
   </header>
 
-  <!-- Local video with controls and sound -->
-  <video controls>
-    <source src="Hellingur - Kynningarmyndband.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+  <!-- YouTube embed -->
+  <div class="video-container">
+    <iframe
+      src="https://www.youtube.com/embed/idmptqrMQeQ"
+      title="Hellingur Kynningarmyndband"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+    ></iframe>
+  </div>
 
   <main>
     <p><strong>Almenn miðasala hefst í júlí:</strong><br>
     Verð: 10.000kr<br>
-    Hægt að forpanta miða hér: <a href="https://tix.is/hellingur" target="_blank">tix.is/hellingur</a></p>
+    Hægt að forpanta miða hér: <a href="https://tix.is/hellingur" target="_blank" rel="noopener noreferrer">tix.is/hellingur</a></p>
 
     <h2>LINEUP</h2>
     <ul>
